@@ -16,6 +16,7 @@ import nltk
 nltk.download('punkt')
 from sklearn.linear_model import SGDClassifier
 from sklearn.linear_model import Perceptron
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import MultinomialNB
 from time import time
 from sklearn import metrics
@@ -118,7 +119,7 @@ print_stats(train_labels, train_docs, test_labels, test_docs)
 
 
 
-# Classify - using machine learning methods : SVM, Naive-Bayes
+# Classify - using machine learning methods : SVM, Naive-Bayes, Random Forest
 def benchmark(clf):
     print('_' * 80)
     print("Training: ")
@@ -143,7 +144,8 @@ def benchmark(clf):
 
 for clf, name in (
         (SGDClassifier(), "SVM"),
-        (MultinomialNB(), "Naive Bayes")):
+        (MultinomialNB(), "Naive Bayes"),
+        (RandomForestClassifier(), "Random Forest")):
     print('=' * 80)
     print(name)
     benchmark(clf)
@@ -152,18 +154,37 @@ for clf, name in (
 
 # this part deals with optimizing the model
 
+
 # optimizing SVM
 nb_clf = Pipeline([('vect', TfidfVectorizer()), ('clf', SGDClassifier())])
-parameters = {'vect__max_df': (0.3, 0.5), 'clf__alpha': (0.01, 1.0)}
+parameters = {'vect__max_df': (0.3, 0.5), 'clf__alpha': (0.0001, 0.001)}
 gs_clf = GridSearchCV(nb_clf, parameters, n_jobs=1)
 gs_clf = gs_clf.fit(train_docs, train_labels)
 print('Best score: ', gs_clf.best_score_)
 print('Best params: ', gs_clf.best_params_)
 
+best_model = gs_clf.best_estimator_
+best_score = gs_clf.best_score_
+
 # optimizing Naive Bayes
 nb_clf = Pipeline([('vect', TfidfVectorizer()), ('clf', MultinomialNB())])
-parameters = {'vect__max_df': (0.3, 0.5), 'clf__alpha': (0.01, 1.0)}
+parameters = {'vect__max_df': (0.3, 0.5), 'clf__alpha': (0.0001, 0.001)}
 gs_clf = GridSearchCV(nb_clf, parameters, n_jobs=1)
 gs_clf = gs_clf.fit(train_docs, train_labels)
 print('Best score: ', gs_clf.best_score_)
 print('Best params: ', gs_clf.best_params_)
+
+if best_score < gs_clf.best_score_:
+    best_model = gs_clf.best_estimator_
+    best_score = gs_clf.best_score_
+
+# optimizing Rand Forest
+nb_clf = Pipeline([('vect', TfidfVectorizer()), ('clf', RandomForestClassifier())])
+parameters = {'vect__max_df': (0.3, 0.5), 'clf__criterion': ('gini', 'entropy'), 'clf__min_samples_leaf': (1, 10)}
+gs_clf = GridSearchCV(nb_clf, parameters, n_jobs=1)
+gs_clf = gs_clf.fit(train_docs, train_labels)
+print('Best score: ', gs_clf.best_score_)
+print('Best params: ', gs_clf.best_params_)
+if best_score < gs_clf.best_score_:
+    best_model = gs_clf.best_estimator_
+    best_score = gs_clf.best_score_
