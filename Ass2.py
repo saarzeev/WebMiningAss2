@@ -1,12 +1,7 @@
-# import logging
-# import numpy as np
-# import sys
-# from time import time
-# import matplotlib.pyplot as plt
+
 import pandas as pd
-#
-# # from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
 import re
 from nltk.stem.porter import PorterStemmer
 from nltk.corpus import stopwords
@@ -15,7 +10,6 @@ import nltk
 
 nltk.download('punkt')
 from sklearn.linear_model import SGDClassifier
-from sklearn.linear_model import Perceptron
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import MultinomialNB
 from time import time
@@ -23,9 +17,6 @@ from sklearn import metrics
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
 
-# from sklearn.pipeline import Pipeline
-# from sklearn.utils.extmath import density
-# from sklearn import metrics
 
 def load_data(path):
     labels = []
@@ -91,13 +82,12 @@ def print_stats(train_labels, train_docs, test_labels, test_docs):
     list2 = list(zip(all_labels, tokenize_docs))
     df2 = pd.DataFrame(list2, columns=['Label', 'Word'])
     df3 = unnesting(df2, ['Word']).groupby(['Label', 'Word']).size().reset_index(name='Occurences')
-    print ("-" * 60)
+    print("-" * 60)
 
     for name, group in df3.groupby('Label'):
         print("Category:" + name)
         print(group.nlargest(10, 'Occurences'))
-        print ("-" * 60)
-
+        print("-" * 60)
 
 
 test_path = "test_hw2.txt"
@@ -107,10 +97,18 @@ train_labels, train_docs = load_data("train_hw2.txt")
 test_labels, test_docs = load_data("test_hw2.txt")
 
 stop_words = get_stemmed_stopwords()
-vectorizer = TfidfVectorizer(stop_words=stop_words, lowercase=True, tokenizer=stemming_tokenizer)
-print (train_labels)
-X_Train = vectorizer.fit_transform(train_docs)
-X_Test = vectorizer.transform(test_docs)
+
+# tfidf vectorizer
+tfidf_vectorizer = TfidfVectorizer(stop_words=stop_words, lowercase=True, tokenizer=stemming_tokenizer)
+print(train_labels)
+X_Train_tfidf = tfidf_vectorizer.fit_transform(train_docs)
+X_Test_tfidf = tfidf_vectorizer.transform(test_docs)
+
+#count vectorizer
+bigram_vectorizer = CountVectorizer(stop_words=stop_words, lowercase=True, tokenizer=stemming_tokenizer, ngram_range=(2, 2), token_pattern=r'\b\w+\b', min_df=1)
+print(train_labels)
+X_Train_bigram = bigram_vectorizer.fit_transform(train_docs)
+X_Test_bigram = bigram_vectorizer.transform(test_docs)
 
 Y_Train = train_labels
 Y_Test = test_labels
@@ -119,18 +117,39 @@ print_stats(train_labels, train_docs, test_labels, test_docs)
 
 
 
-# Classify - using machine learning methods : SVM, Naive-Bayes, Random Forest
+# Classify - using machine learning methods : SVM, Naive-Bayes, Random Forest and
 def benchmark(clf):
+    print("Using tfidf vectorizer:")
     print('_' * 80)
     print("Training: ")
     print(clf)
     t0 = time()
-    clf.fit(X_Train, Y_Train)
+    clf.fit(X_Train_tfidf, Y_Train)
     train_time = time() - t0
     print("train time: %0.3fs" % train_time)
 
     t0 = time()
-    pred = clf.predict(X_Test)
+    pred = clf.predict(X_Test_tfidf)
+    test_time = time() - t0
+    print("test time:  %0.3fs" % test_time)
+
+    score = metrics.accuracy_score(Y_Test, pred)
+    print("accuracy:   %0.3f" % score)
+
+    print()
+    clf_descr = str(clf).split('(')[0]
+
+    print("Using bigram vectorizer:")
+    print('_' * 80)
+    print("Training: ")
+    print(clf)
+    t0 = time()
+    clf.fit(X_Train_bigram, Y_Train)
+    train_time = time() - t0
+    print("train time: %0.3fs" % train_time)
+
+    t0 = time()
+    pred = clf.predict(X_Test_bigram)
     test_time = time() - t0
     print("test time:  %0.3fs" % test_time)
 
@@ -142,26 +161,25 @@ def benchmark(clf):
     return clf_descr, score, train_time, test_time
 
 
-for clf, name in (
-        (SGDClassifier(), "SVM"),
-        (MultinomialNB(), "Naive Bayes"),
-        (RandomForestClassifier(), "Random Forest")):
-    print('=' * 80)
-    print(name)
-    benchmark(clf)
+# for clf, name in (
+#         (SGDClassifier(), "SVM"),
+#         (MultinomialNB(), "Naive Bayes"),
+#         (RandomForestClassifier(), "Random Forest")):
+#     print('=' * 80)
+#     print(name)
+#     benchmark(clf)
 
 
 
 # this part deals with optimizing the model
-
-
+#region TfidfVectorizer
 # optimizing SVM
 nb_clf = Pipeline([('vect', TfidfVectorizer()), ('clf', SGDClassifier())])
 parameters = {'vect__max_df': (0.3, 0.5), 'clf__alpha': (0.0001, 0.001)}
 gs_clf = GridSearchCV(nb_clf, parameters, n_jobs=1)
 gs_clf = gs_clf.fit(train_docs, train_labels)
-print('Best score: ', gs_clf.best_score_)
-print('Best params: ', gs_clf.best_params_)
+# print('Best score: ', gs_clf.best_score_)
+# print('Best params: ', gs_clf.best_params_)
 
 best_model = gs_clf.best_estimator_
 best_score = gs_clf.best_score_
@@ -171,8 +189,8 @@ nb_clf = Pipeline([('vect', TfidfVectorizer()), ('clf', MultinomialNB())])
 parameters = {'vect__max_df': (0.3, 0.5), 'clf__alpha': (0.0001, 0.001)}
 gs_clf = GridSearchCV(nb_clf, parameters, n_jobs=1)
 gs_clf = gs_clf.fit(train_docs, train_labels)
-print('Best score: ', gs_clf.best_score_)
-print('Best params: ', gs_clf.best_params_)
+# print('Best score: ', gs_clf.best_score_)
+# print('Best params: ', gs_clf.best_params_)
 
 if best_score < gs_clf.best_score_:
     best_model = gs_clf.best_estimator_
@@ -180,11 +198,62 @@ if best_score < gs_clf.best_score_:
 
 # optimizing Rand Forest
 nb_clf = Pipeline([('vect', TfidfVectorizer()), ('clf', RandomForestClassifier())])
-parameters = {'vect__max_df': (0.3, 0.5), 'clf__criterion': ('gini', 'entropy'), 'clf__min_samples_leaf': (1, 10)}
+parameters = {'vect__max_df': (0.3, 0.5), 'clf__criterion': ('gini', 'entropy')}
 gs_clf = GridSearchCV(nb_clf, parameters, n_jobs=1)
 gs_clf = gs_clf.fit(train_docs, train_labels)
-print('Best score: ', gs_clf.best_score_)
-print('Best params: ', gs_clf.best_params_)
+# print('Best score: ', gs_clf.best_score_)
+# print('Best params: ', gs_clf.best_params_)
 if best_score < gs_clf.best_score_:
     best_model = gs_clf.best_estimator_
     best_score = gs_clf.best_score_
+# endregion
+
+# region count vectorizer
+# optimizing SVM
+nb_clf = Pipeline([('vect', CountVectorizer(stop_words=stop_words, ngram_range=(2, 2), tokenizer=stemming_tokenizer ,token_pattern=r'\b\w+\b', min_df=1)), ('clf', SGDClassifier())])
+parameters = {'vect__lowercase': (True, False), 'clf__alpha': (0.0001, 0.001)}
+gs_clf = GridSearchCV(nb_clf, parameters, n_jobs=1)
+gs_clf = gs_clf.fit(train_docs, train_labels)
+# print('Best score: ', gs_clf.best_score_)
+# print('Best params: ', gs_clf.best_params_)
+
+if best_score < gs_clf.best_score_:
+    best_model = gs_clf.best_estimator_
+    best_score = gs_clf.best_score_
+
+# optimizing Naive Bayes
+nb_clf = Pipeline([('vect', CountVectorizer(stop_words=stop_words, ngram_range=(2, 2), tokenizer=stemming_tokenizer ,token_pattern=r'\b\w+\b', min_df=1)), ('clf', MultinomialNB())])
+parameters = {'vect__lowercase': (True, False), 'clf__alpha': (0.0001, 0.001)}
+gs_clf = GridSearchCV(nb_clf, parameters, n_jobs=1)
+gs_clf = gs_clf.fit(train_docs, train_labels)
+# print('Best score: ', gs_clf.best_score_)
+# print('Best params: ', gs_clf.best_params_)
+
+if best_score < gs_clf.best_score_:
+    best_model = gs_clf.best_estimator_
+    best_score = gs_clf.best_score_
+
+# optimizing Rand Forest
+nb_clf = Pipeline([('vect', CountVectorizer(stop_words=stop_words, ngram_range=(2, 2), tokenizer=stemming_tokenizer ,token_pattern=r'\b\w+\b', min_df=1)), ('clf', RandomForestClassifier())])
+parameters = {'vect__lowercase': (True, False), 'clf__criterion': ('gini', 'entropy')}
+gs_clf = GridSearchCV(nb_clf, parameters, n_jobs=1)
+gs_clf = gs_clf.fit(train_docs, train_labels)
+# print('Best score: ', gs_clf.best_score_)
+# print('Best params: ', gs_clf.best_params_)
+if best_score < gs_clf.best_score_:
+    best_model = gs_clf.best_estimator_
+    best_score = gs_clf.best_score_
+
+print('Overall best training score is: ' + str(best_score))
+print('Selected pipline: ', [name for name, _ in best_model.steps])
+print("Best parameters set:")
+best_parameters = best_model.get_params()
+for param_name in sorted(parameters.keys()):
+    print("\t%s: %r" % (param_name, best_parameters[param_name]))
+
+pred = best_model.predict(test_docs)
+
+score = metrics.accuracy_score(test_labels, pred)
+print("accuracy:   %0.3f" % score)
+
+# endregion
