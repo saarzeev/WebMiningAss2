@@ -113,7 +113,7 @@ X_Test_bigram = bigram_vectorizer.transform(test_docs)
 Y_Train = train_labels
 Y_Test = test_labels
 
-print_stats(train_labels, train_docs, test_labels, test_docs)
+#print_stats(train_labels, train_docs, test_labels, test_docs)
 
 
 
@@ -178,8 +178,8 @@ nb_clf = Pipeline([('vect', TfidfVectorizer()), ('clf', SGDClassifier())])
 parameters = {'vect__max_df': (0.3, 0.5), 'clf__alpha': (0.0001, 0.001)}
 gs_clf = GridSearchCV(nb_clf, parameters, n_jobs=1)
 gs_clf = gs_clf.fit(train_docs, train_labels)
-# print('Best score: ', gs_clf.best_score_)
-# print('Best params: ', gs_clf.best_params_)
+print('Best score: ', gs_clf.best_score_)
+print('Best params: ', gs_clf.best_params_)
 
 best_model = gs_clf.best_estimator_
 best_score = gs_clf.best_score_
@@ -189,8 +189,8 @@ nb_clf = Pipeline([('vect', TfidfVectorizer()), ('clf', MultinomialNB())])
 parameters = {'vect__max_df': (0.3, 0.5), 'clf__alpha': (0.0001, 0.001)}
 gs_clf = GridSearchCV(nb_clf, parameters, n_jobs=1)
 gs_clf = gs_clf.fit(train_docs, train_labels)
-# print('Best score: ', gs_clf.best_score_)
-# print('Best params: ', gs_clf.best_params_)
+print('Best score: ', gs_clf.best_score_)
+print('Best params: ', gs_clf.best_params_)
 
 if best_score < gs_clf.best_score_:
     best_model = gs_clf.best_estimator_
@@ -201,8 +201,8 @@ nb_clf = Pipeline([('vect', TfidfVectorizer()), ('clf', RandomForestClassifier()
 parameters = {'vect__max_df': (0.3, 0.5), 'clf__criterion': ('gini', 'entropy')}
 gs_clf = GridSearchCV(nb_clf, parameters, n_jobs=1)
 gs_clf = gs_clf.fit(train_docs, train_labels)
-# print('Best score: ', gs_clf.best_score_)
-# print('Best params: ', gs_clf.best_params_)
+print('Best score: ', gs_clf.best_score_)
+print('Best params: ', gs_clf.best_params_)
 if best_score < gs_clf.best_score_:
     best_model = gs_clf.best_estimator_
     best_score = gs_clf.best_score_
@@ -214,8 +214,8 @@ nb_clf = Pipeline([('vect', CountVectorizer(stop_words=stop_words, ngram_range=(
 parameters = {'vect__lowercase': (True, False), 'clf__alpha': (0.0001, 0.001)}
 gs_clf = GridSearchCV(nb_clf, parameters, n_jobs=1)
 gs_clf = gs_clf.fit(train_docs, train_labels)
-# print('Best score: ', gs_clf.best_score_)
-# print('Best params: ', gs_clf.best_params_)
+print('Best score: ', gs_clf.best_score_)
+print('Best params: ', gs_clf.best_params_)
 
 if best_score < gs_clf.best_score_:
     best_model = gs_clf.best_estimator_
@@ -226,8 +226,8 @@ nb_clf = Pipeline([('vect', CountVectorizer(stop_words=stop_words, ngram_range=(
 parameters = {'vect__lowercase': (True, False), 'clf__alpha': (0.0001, 0.001)}
 gs_clf = GridSearchCV(nb_clf, parameters, n_jobs=1)
 gs_clf = gs_clf.fit(train_docs, train_labels)
-# print('Best score: ', gs_clf.best_score_)
-# print('Best params: ', gs_clf.best_params_)
+print('Best score: ', gs_clf.best_score_)
+print('Best params: ', gs_clf.best_params_)
 
 if best_score < gs_clf.best_score_:
     best_model = gs_clf.best_estimator_
@@ -238,8 +238,8 @@ nb_clf = Pipeline([('vect', CountVectorizer(stop_words=stop_words, ngram_range=(
 parameters = {'vect__lowercase': (True, False), 'clf__criterion': ('gini', 'entropy')}
 gs_clf = GridSearchCV(nb_clf, parameters, n_jobs=1)
 gs_clf = gs_clf.fit(train_docs, train_labels)
-# print('Best score: ', gs_clf.best_score_)
-# print('Best params: ', gs_clf.best_params_)
+print('Best score: ', gs_clf.best_score_)
+print('Best params: ', gs_clf.best_params_)
 if best_score < gs_clf.best_score_:
     best_model = gs_clf.best_estimator_
     best_score = gs_clf.best_score_
@@ -248,7 +248,7 @@ print('Overall best training score is: ' + str(best_score))
 print('Selected pipline: ', [name for name, _ in best_model.steps])
 print("Best parameters set:")
 best_parameters = best_model.get_params()
-for param_name in sorted(parameters.keys()):
+for param_name in sorted(best_parameters.keys()):
     print("\t%s: %r" % (param_name, best_parameters[param_name]))
 
 pred = best_model.predict(test_docs)
