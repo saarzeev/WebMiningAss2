@@ -7,7 +7,5 @@ In order to start running the notebook you must first upload the following docum
 the model will be saved at the same place.
 
 ## Authors:
-
-Ilan Pogrebinsky
-Nofar Turteltaub
-Saar Guttman
+  - Nofar Turteltaub
+  - Saar Guttman
