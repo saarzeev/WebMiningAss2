@@ -5,3 +5,9 @@ In this repo you can find the given task, our submitted notebook and short chalk
 ## before you start
 In order to start running the notebook you must first upload the following documents: test_hw2, train_hw2 to jupyter files.
 the model will be saved at the same place.
+
+## Authors:
+
+Ilan Pogrebinsky
+Nofar Turteltaub
+Saar Guttman
